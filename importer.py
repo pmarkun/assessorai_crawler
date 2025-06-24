@@ -85,7 +85,7 @@ def setup_schema(client, class_name, vector_config, reset=False):
         print(f"Coleção '{class_name}' já existe. Pulando criação.")
 
 
-def import_items(client, class_name, items, batch_size=20, dry_run=False):
+def import_items(client, class_name, items, batch_size=10, dry_run=False):
     """Importa itens e seus chunks no Weaviate."""
     collection = client.collections.get(class_name)
     total = 0
@@ -116,6 +116,17 @@ def import_items(client, class_name, items, batch_size=20, dry_run=False):
                 else:
                     batch.add_object(properties=props, uuid=uuid)
                 total += 1
+                
+            if batch.number_errors > 10:
+                print("Batch import stopped due to excessive errors.")
+                break
+                    
+
+        failed_objects = collection.batch.failed_objects
+        if failed_objects:
+            print(f"Number of failed imports: {len(failed_objects)}")
+            print(f"First failed object: {failed_objects[0:5]}")
+
     print(f"Importação finalizada: {total} chunks.")
 
 
