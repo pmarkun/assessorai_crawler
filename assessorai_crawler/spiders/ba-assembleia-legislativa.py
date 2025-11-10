@@ -3,11 +3,11 @@ from ..utils import clean_json_text
 
 #METADATA BROKEN
 
-class ProposicoesBASpider(ProposicoesLegislapi):
-    name = 'proposicoesba'
+class BaAssembleiaLegislativaSpider(ProposicoesLegislapi):
+    name = 'ba-assembleia-legislativa'
     house = 'Assembleia Legislativa da Bahia'
     uf = 'ba'
-    slug = name.replace(' ', '_').lower()
+    slug = name
 
     def build_url(self, entry, meta):
         raw_title = entry.get('Titulo', '').strip()

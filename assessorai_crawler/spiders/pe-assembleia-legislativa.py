@@ -1,11 +1,11 @@
 from .proposicoeslegislapi import ProposicoesLegislapi
 from ..utils import clean_json_text
 
-class ProposicoesPESpider(ProposicoesLegislapi):
-    name = 'proposicoespe'
+class PeAssembleiaLegislativaSpider(ProposicoesLegislapi):
+    name = 'pe-assembleia-legislativa'
     house = 'Assembleia Legislativa de Pernambuco'
     uf = 'pe'
-    slug = name.replace(' ', '_').lower()
+    slug = name
 
     def build_url(self, entry, meta):
         raw_title = entry.get('Titulo', '').strip()

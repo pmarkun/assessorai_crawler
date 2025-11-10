@@ -117,7 +117,34 @@ Organize o texto de forma clara e estruturada.
         
         if not files:
             spider.logger.warning(f"Item {item.get('title')} não possui arquivos para processar")
+        return item
+
+
+class MarkdownWriterPipeline:
+    """Pipeline que salva o texto extraído em arquivo .md"""
+
+    def process_item(self, item, spider):
+        """Salva full_text em arquivo .md se caminho_arquivo_texto estiver definido"""
+        full_text = item.get('full_text', '').strip()
+        caminho = item.get('caminho_arquivo_texto')
+
+        if not full_text or not caminho:
+            spider.logger.debug(f"Pulando salvamento .md para item {item.get('title')} - texto ou caminho ausente")
             return item
+
+        # Caminho completo: storage/downloads/md/{caminho}
+        full_path = os.path.join('storage', 'downloads', 'md', caminho)
+        dir_path = os.path.dirname(full_path)
+
+        try:
+            os.makedirs(dir_path, exist_ok=True)
+            with open(full_path, 'w', encoding='utf-8') as f:
+                f.write(full_text)
+            spider.logger.info(f"Texto salvo em .md: {full_path} ({len(full_text)} caracteres)")
+        except Exception as e:
+            spider.logger.error(f"Erro ao salvar .md {full_path}: {str(e)}")
+
+        return item
         
         extracted_texts = []
         files_dir = spider.settings.get('FILES_STORE', 'downloads')
