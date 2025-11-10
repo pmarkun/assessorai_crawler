@@ -92,7 +92,6 @@ class SpSaoJoseDosCamposSpider(scrapy.Spider):
         else:
             self.logger.warning(f"PDF não encontrado para '{item['title']}'")
             item['full_text'] = "[FALHA] PDF não encontrado na página de documentos."
-            item['length'] = len(item['full_text'])
 
         yield item
 
