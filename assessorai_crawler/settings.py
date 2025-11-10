@@ -14,8 +14,6 @@ NEWSPIDER_MODULE = "assessorai_crawler.spiders"
 
 ADDONS = {}
 
-CLOSESPIDER_ITEMCOUNT = 1	
-
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = "assessorai_crawler (+http://www.yourdomain.com)"
 
