@@ -5,10 +5,9 @@ from datetime import datetime
 from ..items import ProposicaoItem
 
 import urllib.parse
-class ProposicoesCNSpider(scrapy.Spider):
-    name = 'proposicoescn'
-    slug = name.replace(' ', '_').lower()
-    slug = slug.encode('ascii', 'ignore').decode('ascii')
+class PrCuritibaSpider(scrapy.Spider):
+    name = 'pr-curitiba'
+    slug = name
 
     # Read local JSON file
     start_urls = ['file:///home/markun/devel/datasets/legisla/cn/ProposicaoComEmentas.json']

@@ -67,9 +67,10 @@ ROBOTSTXT_OBEY = True
 ITEM_PIPELINES = {
     "assessorai_crawler.pipelines.ProposicaoFilesPipeline": 1,
     "assessorai_crawler.pipelines.GeminiPDFExtractionPipeline": 2,
+    "assessorai_crawler.pipelines.MarkdownWriterPipeline": 3,
     "assessorai_crawler.pipelines.ValidationPipeline": 100,
     "assessorai_crawler.pipelines.JsonWriterSinglePipeline": 300,
-}
+ }
 
 # Configurações do FilesPipeline
 FILES_STORE = 'storage/downloads'  # Pasta onde os arquivos serão salvos

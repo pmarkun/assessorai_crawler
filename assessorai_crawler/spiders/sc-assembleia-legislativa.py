@@ -3,11 +3,11 @@ from ..utils import clean_json_text
 import hashlib
 import scrapy
 
-class ProposicoesSCSpider(ProposicoesLegislapi):
-    name = 'proposicoessc'
+class ScAssembleiaLegislativaSpider(ProposicoesLegislapi):
+    name = 'sc-assembleia-legislativa'
     house = 'Assembleia Legislativa de Santa Catarina'
     uf = 'sc'
-    slug = name.replace(' ', '_').lower()
+    slug = name
 
     def parse_metadata(self, response):
         self.metadata = {}

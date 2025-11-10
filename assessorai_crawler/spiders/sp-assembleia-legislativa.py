@@ -1,7 +1,7 @@
 from .proposicoeslegislapi import ProposicoesLegislapi
 
-class ProposicoesSPSpider(ProposicoesLegislapi):
-    name = 'proposicoessp'
+class SpAssembleiaLegislativaSpider(ProposicoesLegislapi):
+    name = 'sp-assembleia-legislativa'
     house = 'Assembleia Legislativa de São Paulo'
     uf = 'sp'
-    slug = name.replace(' ', '_').lower()
+    slug = name

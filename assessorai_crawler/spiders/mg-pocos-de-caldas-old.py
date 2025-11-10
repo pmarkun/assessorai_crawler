@@ -4,11 +4,11 @@ from datetime import datetime
 from assessorai_crawler.items import ProposicaoItem
 from urllib.parse import urlencode
 
-class ProposicoesPCDSpider(scrapy.Spider):
-    name = "proposicoespcd"
+class MgPocosDeCaldasOldSpider(scrapy.Spider):
+    name = "mg-pocos-de-caldas-old"
     house = "Câmara Municipal de Poços de Caldas"
     allowed_domains = ["pocosdecaldas.siscam.com.br"]
-    slug = "proposicoespcd"
+    slug = "mg-pocos-de-caldas-old"
     custom_settings = {
         'ROBOTSTXT_OBEY': False,
         'DEFAULT_REQUEST_HEADERS': {
