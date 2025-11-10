@@ -53,9 +53,9 @@ CONCURRENT_REQUESTS_PER_DOMAIN = 16
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-#DOWNLOADER_MIDDLEWARES = {
-#    "assessorai_crawler.middlewares.AssessoraiCrawlerDownloaderMiddleware": 543,
-#}
+DOWNLOADER_MIDDLEWARES = {
+    "assessorai_crawler.middlewares.AssessoraiCrawlerDownloaderMiddleware": 543,
+}
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
@@ -68,9 +68,10 @@ CONCURRENT_REQUESTS_PER_DOMAIN = 16
 ITEM_PIPELINES = {
     "assessorai_crawler.pipelines.ProposicaoFilesPipeline": 1,
     "assessorai_crawler.pipelines.GeminiPDFExtractionPipeline": 2,
+    "assessorai_crawler.pipelines.MarkdownWriterPipeline": 3,
     "assessorai_crawler.pipelines.ValidationPipeline": 100,
     "assessorai_crawler.pipelines.JsonWriterSinglePipeline": 300,
-  }
+   }
 
 # Configurações do FilesPipeline
 FILES_STORE = 'storage/downloads'  # Pasta onde os arquivos serão salvos
@@ -99,6 +100,12 @@ HTTPCACHE_STORAGE = "scrapy.extensions.httpcache.FilesystemCacheStorage"
 
 # Set settings whose default value is deprecated to a future-proof value
 FEED_EXPORT_ENCODING = "utf-8"
+
+# Allow redirects to offsite domains (needed for PDF downloads from blob storage)
+REDIRECT_ALLOW_OFFSITE = True
+
+# Allow redirects in media pipelines (needed for PDF downloads that redirect to blob storage)
+MEDIA_ALLOW_REDIRECTS = True
 
 # Defina um timeout geral para os downloads para evitar que o spider fique preso.
 DOWNLOAD_TIMEOUT = 30
