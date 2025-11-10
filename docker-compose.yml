@@ -59,8 +59,9 @@ services:
     restart: unless-stopped
 
   scrapydweb:
-    build: .
-    image: assessorai-crawler:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.scrapydweb
     container_name: assessorai-scrapydweb
     command: scrapydweb
     expose:
