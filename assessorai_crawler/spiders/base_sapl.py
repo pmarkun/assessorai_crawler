@@ -114,6 +114,7 @@ class BaseSaplSpider(scrapy.Spider):
         item['house'] = self.house
         item['scraped_at'] = datetime.now().isoformat()
         item['uuid'] = hashlib.md5(response.urljoin(link_detalhes_relativo).encode('utf-8')).hexdigest()
+        item['project_url'] = response.urljoin(link_detalhes_relativo)  # URL da página de detalhes do projeto
 
         # Caminho para .md
         normalized_type = item['type'].lower().replace(' ', '-').replace('à', 'a') if item['type'] else 'unknown'
