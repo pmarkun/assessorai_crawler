@@ -32,6 +32,9 @@ ENV/
 .DS_Store
 Thumbs.db
 
+# Scrapy
+.scrapy/
+
 # Eggs/build
 *.egg-info/
 dist/
