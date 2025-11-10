@@ -25,11 +25,12 @@ class BaseCamarasempapelSpider(scrapy.Spider):
         'CONCURRENT_REQUESTS': 1,
     }
 
-    def __init__(self, ano=None, tipo=None, max_pages=None, *args, **kwargs):
+    def __init__(self, ano=None, tipo=None, max_pages=None, reset=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ano = ano
         self.tipo = tipo or self.default_tipo
         self.max_pages = int(max_pages) if max_pages is not None else None
+        self.reset = reset
 
         if not self.domain:
             raise ValueError("Subclass must define 'domain'")

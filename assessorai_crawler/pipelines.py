@@ -26,15 +26,37 @@ class JsonWriterSinglePipeline:
     def open_spider(self, spider):
         # Inicializa a lista de itens
         self.items = []
+        self.existing_uuids = set()
         # Garante pasta de saída
         output_dir = os.path.join('storage', 'output')
         os.makedirs(output_dir, exist_ok=True)
         self.file_path = os.path.join(output_dir, f'{spider.slug}_proposicoes.json')
         self.batch_size = spider.settings.get('JSON_BATCH_SIZE', 10)
 
+        # Carrega itens existentes se não for reset
+        if not getattr(spider, 'reset', False):
+            if os.path.exists(self.file_path):
+                try:
+                    with open(self.file_path, 'r', encoding='utf-8') as f:
+                        existing_items = json.load(f)
+                        self.items = existing_items
+                        self.existing_uuids = {item['uuid'] for item in existing_items}
+                        spider.logger.info(f"Loaded {len(self.items)} existing items from {self.file_path}")
+                except (json.JSONDecodeError, IOError) as e:
+                    spider.logger.warning(f"Failed to load existing items: {e}. Starting fresh.")
+                    self.items = []
+                    self.existing_uuids = set()
+
     def process_item(self, item, spider):
+        # Verifica duplicatas
+        item_uuid = item.get('uuid')
+        if item_uuid in self.existing_uuids:
+            spider.logger.info(f"Skipping duplicate item: {item_uuid}")
+            return item
+
         # Coleta cada item
         self.items.append(dict(item))
+        self.existing_uuids.add(item_uuid)
         # Salva incrementalmente a cada batch_size itens
         if len(self.items) % self.batch_size == 0:
             with open(self.file_path, 'w', encoding='utf-8') as f:
