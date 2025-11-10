@@ -30,14 +30,19 @@ class JsonWriterSinglePipeline:
         output_dir = os.path.join('storage', 'output')
         os.makedirs(output_dir, exist_ok=True)
         self.file_path = os.path.join(output_dir, f'{spider.slug}_proposicoes.json')
+        self.batch_size = spider.settings.get('JSON_BATCH_SIZE', 10)
 
     def process_item(self, item, spider):
-        # Coleta cada item para depois gravar em lote
+        # Coleta cada item
         self.items.append(dict(item))
+        # Salva incrementalmente a cada batch_size itens
+        if len(self.items) % self.batch_size == 0:
+            with open(self.file_path, 'w', encoding='utf-8') as f:
+                json.dump(self.items, f, ensure_ascii=False, indent=2)
         return item
 
     def close_spider(self, spider):
-        # Grava todos os itens em um único JSON
+        # Grava todos os itens finais em um único JSON
         with open(self.file_path, 'w', encoding='utf-8') as f:
             json.dump(self.items, f, ensure_ascii=False, indent=2)
 
