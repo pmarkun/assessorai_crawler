@@ -63,7 +63,17 @@ class BaseSaplSpider(scrapy.Spider):
         for linha in linhas:
             item = self.extract_metadata_from_row(linha, response)
             if item:
-                yield item
+                if item.get('file_urls'):
+                    # PDF encontrado na listagem, yield diretamente
+                    yield item
+                else:
+                    # PDF não encontrado, buscar na página de detalhes
+                    if item.get('url'):
+                        yield scrapy.Request(
+                            url=item['url'],
+                            callback=self.parse_process_page,
+                            meta={'item': item}
+                        )
 
         # Verificar limite de páginas
         current_page = response.meta.get('page_number', 1)
