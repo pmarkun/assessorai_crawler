@@ -150,10 +150,11 @@ class BaseCamarasempapelSpider(scrapy.Spider):
         item['presentation_date'] = data_tag.css('::text').get('').strip() if data_tag else None
         item['house'] = self.house
         item['scraped_at'] = datetime.now().isoformat()
-        link_detalhes_abs = response.urljoin(titulo_tag.attrib['href'])
-        item['uuid'] = hashlib.md5(link_detalhes_abs.encode('utf-8')).hexdigest()
+        link_detalhes_relativo = titulo_tag.attrib['href']
+        item['uuid'] = hashlib.md5(response.urljoin(link_detalhes_relativo).encode('utf-8')).hexdigest()
         link_processo_tag = prop.css("a[href*='Digital.aspx']")
         item['url'] = response.urljoin(link_processo_tag.attrib['href']) if link_processo_tag else None
+        item['project_url'] = response.urljoin(link_detalhes_relativo)  # URL da página de detalhes do projeto
 
         # Gerar caminho para arquivo .md
         normalized_type = item['type'].lower().replace(' ', '-').replace('º', '') if item['type'] else 'unknown'
