@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from textual.app import App, ComposeResult
-from textual.containers import Horizontal, Vertical, Container
+from textual.containers import Horizontal, Vertical, Container, VerticalScroll
 from textual.widgets import Header, Footer, ListView, ListItem, Input, Button, TextArea, Label, Checkbox, Select, Static
 from textual.widget import Widget
 from textual import events
@@ -166,12 +166,22 @@ class AssessorAICrawlerTUI(App):
         margin: 1;
     }
 
+    #back_button {
+        background: transparent;
+        border: none;
+        color: $primary;
+        padding: 0 1;
+        margin: 0 0 1 0;
+        height: 1;
+        text-style: bold;
+    }
+
     Input {
         margin: 1;
     }
 
-    TextArea {
-        height: 100%;
+    #content_scroll {
+        height: 70vh;
     }
     """
 
@@ -226,11 +236,9 @@ class AssessorAICrawlerTUI(App):
                     yield ListView(id="results_list")
                     # Details view (hidden initially)
                     with Vertical(id="details_view"):
-                        yield Button("Back to List", id="back_button")
-                        yield Static("Item Details:", classes="section-title")
-                        yield TextArea("", id="details_area", read_only=True)
-                        yield Static("Content:", classes="section-title")
-                        yield TextArea("", id="md_area", read_only=True)
+                        yield Button("Back", id="back_button")
+                        with VerticalScroll(id="content_scroll"):
+                            yield TextArea("", id="md_area", read_only=True)
 
         yield Footer()
 
@@ -259,10 +267,13 @@ class AssessorAICrawlerTUI(App):
                         year = years_sorted[selected_index]
                         self.show_year_items(year)
                 else:
-                    items = self.years.get(self.current_year, [])
-                    if 0 <= selected_index < len(items):
-                        item = items[selected_index]
-                        self.show_item_details(item)
+                    if selected_index == 0:
+                        self.show_years()
+                    else:
+                        items = self.years.get(self.current_year, [])
+                        if 0 <= selected_index - 1 < len(items):
+                            item = items[selected_index - 1]
+                            self.show_item_details(item)
             self.last_click_time = current_time
             self.last_click_item = selected_index
 
@@ -288,10 +299,13 @@ class AssessorAICrawlerTUI(App):
                                 year = years_sorted[selected_index]
                                 self.show_year_items(year)
                         else:
-                            items = self.years.get(self.current_year, [])
-                            if 0 <= selected_index < len(items):
-                                item = items[selected_index]
-                                self.show_item_details(item)
+                            if selected_index == 0:
+                                self.show_years()
+                            else:
+                                items = self.years.get(self.current_year, [])
+                                if 0 <= selected_index - 1 < len(items):
+                                    item = items[selected_index - 1]
+                                    self.show_item_details(item)
                 except:
                     pass
 
@@ -357,6 +371,7 @@ class AssessorAICrawlerTUI(App):
                     break
                 logs_area.text += line.decode().strip() + "\n"
                 logs_area.scroll_to(0, 1)
+                self.refresh()
 
             await process.wait()
 
@@ -427,7 +442,6 @@ class AssessorAICrawlerTUI(App):
         details_view = self.query_one("#details_view")
         details_view.display = True
 
-        details_area = self.query_one("#details_area", TextArea)
         md_area = self.query_one("#md_area", TextArea)
 
         # Show item details
@@ -436,28 +450,30 @@ class AssessorAICrawlerTUI(App):
         details += f"Year: {item.get('year', 'N/A')}\n"
         details += f"Type: {item.get('type', 'N/A')}\n"
         details += f"Author: {', '.join(item.get('author', []))}\n"
-        details += f"Subject: {item.get('subject', 'N/A')}\n"
-        details_area.text = details
+        details += f"Subject: {item.get('subject', 'N/A')}\n\n"
 
         # Show content
         full_text = item.get('full_text')
         if full_text:
-            md_area.text = full_text
+            content = details + "--- Content ---\n\n" + full_text
         else:
             md_files = item.get('md_files')
             if md_files:
-                md_path = Path("storage/output") / md_files
+                md_path = Path.cwd() / "storage" / "output" / md_files
                 if md_path.exists():
                     try:
                         with open(md_path, 'r', encoding='utf-8') as f:
-                            content = f.read()
-                        md_area.text = content
+                            md_content = f.read()
+                        content = details + "--- Content ---\n\n" + md_content
                     except Exception as e:
-                        md_area.text = f"Error loading content: {str(e)}\n"
+                        content = details + f"Error loading content: {str(e)}\n"
                 else:
-                    md_area.text = "Content file not found.\n"
+                    content = details + "Content file not found.\n"
             else:
-                md_area.text = "No content available.\n"
+                content = details + "No content available.\n"
+
+        md_area.text = content
+        self.refresh()
 
     def group_by_year(self):
         """Group items by year."""
@@ -483,10 +499,18 @@ class AssessorAICrawlerTUI(App):
         self.current_year = year
         results_list = self.query_one("#results_list", ListView)
         results_list.clear()
+        results_list.append(ListItem(Label("..")))
         for item in self.years[year]:
             title = item.get("title", "Unknown")
             number = item.get("number", "Unknown")
-            results_list.append(ListItem(Label(f"{title} - {number}")))
+            label = f"{title} - {number}"
+            # Check if markdown file exists
+            md_files = item.get("md_files")
+            if md_files:
+                full_path = Path("storage/output") / md_files
+                if full_path.exists():
+                    label += " (+)"
+            results_list.append(ListItem(Label(label)))
 
     def show_main_layout(self):
         """Show the main two-column layout after spider selection."""
