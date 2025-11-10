@@ -14,7 +14,22 @@ class SpSaoJoseDosCamposSpider(scrapy.Spider):
     uf = 'SP'
     slug = 'sp-sao-jose-dos-campos'
     allowed_domains = ['camarasempapel.camarasjc.sp.gov.br']
-    start_urls = ["https://camarasempapel.camarasjc.sp.gov.br/spl/consulta-producao.aspx?tipo=348&procuraTexto=DocumentoInicial"]
+
+    def __init__(self, ano=None, tipo=None, max_pages=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ano = ano
+        self.tipo = tipo
+        self.max_pages = int(max_pages) if max_pages is not None else None
+        base_url = "https://camarasempapel.camarasjc.sp.gov.br/spl/consulta-producao.aspx"
+        params = []
+        if self.tipo:
+            params.append(f"tipo={self.tipo}")
+        else:
+            params.append("tipo=348")
+        if self.ano:
+            params.append(f"ano_proposicao={self.ano}")
+        params.append("procuraTexto=DocumentoInicial")
+        self.start_urls = [f"{base_url}?{'&'.join(params)}"]
     
     custom_settings = {
         'DOWNLOAD_DELAY': 2,
