@@ -101,11 +101,12 @@ class GeminiPDFExtractionPipeline:
     
     def __init__(self):
         # Configurar API do Gemini
-        api_key = os.getenv('GEMINI_API_KEY')
-        if not api_key:
-            raise ValueError("GEMINI_API_KEY não encontrada no arquivo .env")
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        self.api_key = os.getenv('GEMINI_API_KEY')
+        if self.api_key:
+            genai.configure(api_key=self.api_key)
+            self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        else:
+            self.model = None
         self.files_dir = 'storage/downloads'  # Para acessar arquivos
         
         # Prompt para extração de texto legislativo
@@ -132,6 +133,13 @@ Organize o texto de forma clara e estruturada.
                 with open(full_md_path, 'r', encoding='utf-8') as f:
                     item['full_text'] = f.read().strip()
                 return item
+
+        # Verifica se API key está disponível
+        if not self.api_key:
+            spider.logger.info(f"Gemini API key não disponível, pulando extração para item {item.get('number')}")
+            item['full_text'] = "[PULADO] API key do Gemini não disponível."
+            item['md_files'] = None  # Deixa o campo vazio
+            return item
 
         pdf_files = item.get('pdf_files', [])
         spider.logger.info(f"Gemini processing item {item.get('number')}, pdf_files: {pdf_files}")
