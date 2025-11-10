@@ -13,7 +13,7 @@ from typing import Dict, List, Optional
 
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, Vertical, Container, VerticalScroll
-from textual.widgets import Header, Footer, ListView, ListItem, Input, Button, TextArea, Label, Checkbox, Select, Static
+from textual.widgets import Header, Footer, ListView, ListItem, Input, Button, TextArea, Label, Checkbox, Select, Static, Log
 from textual.widget import Widget
 from textual import events
 from textual.binding import Binding
@@ -183,6 +183,10 @@ class AssessorAICrawlerTUI(App):
     #content_scroll {
         height: 70vh;
     }
+
+    #scrapy-log {
+        height: 1fr;
+    }
     """
 
     BINDINGS = [
@@ -228,7 +232,7 @@ class AssessorAICrawlerTUI(App):
                 # Left: Logs
                 with Vertical(id="logs_column"):
                     yield Static("Execution Logs:", classes="section-title")
-                    yield TextArea("", id="logs_area", read_only=True)
+                    yield Log(id="scrapy-log", auto_scroll=True, highlight=False)
 
                 # Right: Results
                 with Vertical(id="results_column"):
@@ -333,7 +337,7 @@ class AssessorAICrawlerTUI(App):
 
     async def execute_spider(self):
         """Execute the spider asynchronously."""
-        logs_area = self.query_one("#logs_area", TextArea)
+        scrapy_log = self.query_one("#scrapy-log", Log)
         run_button = self.query_one("#run_button", Button)
 
         # Get args from inputs
@@ -348,12 +352,17 @@ class AssessorAICrawlerTUI(App):
         if test_mode:
             self.current_args["max_pages"] = "1"
 
+        # Check reset mode
+        reset_mode = self.query_one("#reset_mode", Checkbox).value
+        if reset_mode:
+            self.current_args["reset"] = "True"
+
         # Build command
         cmd = ["scrapy", "crawl", self.current_spider["name"]]
         for arg, value in self.current_args.items():
             cmd.extend(["-a", f"{arg}={value}"])
 
-        logs_area.text = f"Running: {' '.join(cmd)}\n"
+        scrapy_log.write_line(f"Running: {' '.join(cmd)}")
 
         try:
             process = await asyncio.create_subprocess_exec(
@@ -369,22 +378,20 @@ class AssessorAICrawlerTUI(App):
                 line = await process.stdout.readline()
                 if not line:
                     break
-                logs_area.text += line.decode().strip() + "\n"
-                logs_area.scroll_to(0, 1)
-                self.refresh()
+                scrapy_log.write_line(line.decode().strip())
 
             await process.wait()
 
             if process.returncode == 0:
-                logs_area.text += "Execution completed successfully!\n"
+                scrapy_log.write_line("Execution completed successfully!")
                 # Reload results
                 await asyncio.sleep(1)
                 self.load_results()
             else:
-                logs_area.text += f"Execution failed with code {process.returncode}\n"
+                scrapy_log.write_line(f"Execution failed with code {process.returncode}")
 
         except Exception as e:
-            logs_area.text += f"Error: {str(e)}\n"
+            scrapy_log.write_line(f"Error: {str(e)}")
         finally:
             run_button.label = "Run Scrape"
             self.scraping_running = False
@@ -534,6 +541,7 @@ class AssessorAICrawlerTUI(App):
             args_section.mount(Input(placeholder=f"Enter {arg}", id=f"input_{arg}"))
 
         args_section.mount(Checkbox("Test Mode (limit to 1 page)", id="test_mode"))
+        args_section.mount(Checkbox("Reset Data (overwrite existing)", id="reset_mode"))
 
         # Enable run button
         run_button = self.query_one("#run_button", Button)
