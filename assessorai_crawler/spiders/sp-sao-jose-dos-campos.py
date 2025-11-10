@@ -12,13 +12,6 @@ class SpSaoJoseDosCamposSpider(BaseCamarasempapelSpider):
     default_tipo = 348
     extra_params = ["procuraTexto=DocumentoInicial"]
 
-    # Override custom_settings for higher concurrency
-    custom_settings = {
-        'DOWNLOAD_DELAY': 2,
-        'CONCURRENT_REQUESTS_PER_DOMAIN': 4,
-        'RETRY_TIMES': 3,
-        'ROBOTSTXT_OBEY': False,
-    }
 
 
 
