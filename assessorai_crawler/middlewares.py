@@ -84,6 +84,15 @@ class AssessoraiCrawlerDownloaderMiddleware:
         # - return a Response object
         # - return a Request object
         # - or raise IgnoreRequest
+        if response.status == 302:
+            location = response.headers.get('Location', b'').decode('utf-8', errors='ignore')
+            spider.logger.info(f"Redirect 302: {response.url} -> {location}")
+            from urllib.parse import urlparse
+            parsed = urlparse(location)
+            hostname = parsed.hostname
+            allowed = hostname in spider.allowed_domains if spider.allowed_domains else True
+            redirect_allow_offsite = self.settings.getbool('REDIRECT_ALLOW_OFFSITE', True)
+            spider.logger.info(f"Parsed hostname: {hostname}, allowed_domains: {spider.allowed_domains}, allowed: {allowed}, REDIRECT_ALLOW_OFFSITE: {redirect_allow_offsite}")
         return response
 
     def process_exception(self, request, exception, spider):
