@@ -65,9 +65,15 @@ class ProposicaoFilesPipeline(FilesPipeline):
     """Pipeline customizado para baixar arquivos de proposições"""
     
     def get_media_requests(self, item, info):
-        """Baixa todos os arquivos listados em file_urls"""
+        """Baixa todos os arquivos listados em file_urls, pulando se já existir"""
         urls = item.get('file_urls', [])
         for url in urls:
+            # Verifica se o arquivo já existe
+            file_path = self.file_path(Request(url), item=item, info=info)
+            full_path = os.path.join(info.spider.settings.get('FILES_STORE', 'downloads'), file_path)
+            if os.path.exists(full_path):
+                info.spider.logger.info(f"Arquivo já existe, pulando download: {full_path}")
+                continue
             yield Request(url)
     
     def file_path(self, request, response=None, info=None, *, item=None):
@@ -117,6 +123,15 @@ Organize o texto de forma clara e estruturada.
     
     def process_item(self, item, spider):
         """Processa PDFs baixados e extrai texto usando Gemini"""
+        # Verifica se o arquivo MD já existe
+        md_files = item.get('md_files')
+        if md_files:
+            full_md_path = os.path.join('storage', 'output', md_files)
+            if os.path.exists(full_md_path):
+                spider.logger.info(f"Arquivo MD já existe, pulando extração Gemini: {full_md_path}")
+                item['full_text'] = "[PULADO] MD já existe"
+                return item
+
         pdf_files = item.get('pdf_files', [])
         spider.logger.info(f"Gemini processing item {item.get('number')}, pdf_files: {pdf_files}")
 
@@ -146,7 +161,7 @@ class MarkdownWriterPipeline:
     """Pipeline que salva o texto extraído em arquivo .md"""
 
     def process_item(self, item, spider):
-        """Salva full_text em arquivo .md se md_files estiver definido"""
+        """Salva full_text em arquivo .md se md_files estiver definido e não existir"""
         full_text = item.get('full_text', '').strip()
         md_files = item.get('md_files')
 
@@ -155,6 +170,10 @@ class MarkdownWriterPipeline:
 
         # Caminho completo: storage/output/{md_files}
         full_path = os.path.join('storage', 'output', md_files)
+        if os.path.exists(full_path):
+            spider.logger.info(f"Arquivo MD já existe, pulando: {full_path}")
+            return item
+
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
         with open(full_path, 'w', encoding='utf-8') as f:
             f.write(full_text)
