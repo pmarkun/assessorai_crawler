@@ -27,7 +27,7 @@ class JsonWriterSinglePipeline:
         # Inicializa a lista de itens
         self.items = []
         # Garante pasta de saída
-        output_dir = f'output'
+        output_dir = os.path.join('storage', 'output')
         os.makedirs(output_dir, exist_ok=True)
         self.file_path = os.path.join(output_dir, f'{spider.slug}_proposicoes.json')
 
@@ -148,8 +148,8 @@ class MarkdownWriterPipeline:
         if not full_text or not md_files:
             return item
 
-        # Caminho completo: storage/downloads/{md_files}
-        full_path = os.path.join('storage', 'downloads', md_files)
+        # Caminho completo: storage/output/{md_files}
+        full_path = os.path.join('storage', 'output', md_files)
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
         with open(full_path, 'w', encoding='utf-8') as f:
             f.write(full_text)
