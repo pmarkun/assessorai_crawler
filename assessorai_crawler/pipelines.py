@@ -130,7 +130,21 @@ class MarkdownWriterPipeline:
 
         if not full_text or not caminho:
             spider.logger.debug(f"Pulando salvamento .md para item {item.get('title')} - texto ou caminho ausente")
-            return item
+        return item
+
+
+class TestItemCollectorPipeline:
+    """Pipeline to collect items in memory for testing (not for production)."""
+
+    def __init__(self):
+        self.items = []
+
+    def open_spider(self, spider):
+        self.items = []
+
+    def process_item(self, item, spider):
+        self.items.append(dict(item))
+        return item
 
         # Caminho completo: storage/downloads/md/{caminho}
         full_path = os.path.join('storage', 'downloads', 'md', caminho)

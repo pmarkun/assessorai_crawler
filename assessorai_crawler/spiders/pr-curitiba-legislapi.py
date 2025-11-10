@@ -5,8 +5,8 @@ from datetime import datetime
 from ..items import ProposicaoItem
 
 import urllib.parse
-class PrCuritibaSpider(scrapy.Spider):
-    name = 'pr-curitiba'
+class PrCuritibaLegislapiSpider(scrapy.Spider):
+    name = 'pr-curitiba-legislapi'
     slug = name
 
     # Read local JSON file

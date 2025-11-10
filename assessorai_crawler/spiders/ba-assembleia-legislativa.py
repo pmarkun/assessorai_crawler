@@ -1,4 +1,4 @@
-from .proposicoeslegislapi import ProposicoesLegislapi
+from .base_legislapi import ProposicoesLegislapi
 from ..utils import clean_json_text
 
 #METADATA BROKEN

@@ -1,4 +1,4 @@
-from .proposicoeslegislapi import ProposicoesLegislapi
+from .base_legislapi import ProposicoesLegislapi
 
 class SpAssembleiaLegislativaSpider(ProposicoesLegislapi):
     name = 'sp-assembleia-legislativa'
