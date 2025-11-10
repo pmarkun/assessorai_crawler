@@ -74,7 +74,8 @@ class ProposicaoFilesPipeline(FilesPipeline):
             if os.path.exists(full_path):
                 info.spider.logger.info(f"Arquivo já existe, pulando download: {full_path}")
                 continue
-            yield Request(url)
+            # Desabilita cache para URLs que redirecionam para tokens SAS expiráveis
+            yield Request(url, headers={'Referer': 'https://splegisconsulta.saopaulo.sp.leg.br/Pesquisa/IndexProjeto'}, meta={'dont_cache': True})
     
     def file_path(self, request, response=None, info=None, *, item=None):
         """Define o caminho onde o arquivo será salvo"""
