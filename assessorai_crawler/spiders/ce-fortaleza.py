@@ -92,7 +92,7 @@ class CeFortalezaSpider(scrapy.Spider):
 
         # Caminho para .md
         normalized_type = item['type'].lower().replace(' ', '-').replace('à', 'a') if item['type'] else 'unknown'
-        item['caminho_arquivo_texto'] = f"{self.uf}/{self.slug}/{normalized_type}-{item['number']}-{item['year']}.md"
+        item['md_files'] = f"{self.uf}/{self.slug}/{normalized_type}-{item['number']}-{item['year']}.md"
 
         return item
 

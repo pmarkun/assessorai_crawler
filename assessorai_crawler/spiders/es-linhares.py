@@ -14,19 +14,34 @@ class EsLinharesSpider(scrapy.Spider):
     uf = 'ES'
     slug = 'es-linhares'
     allowed_domains = ['linhares.camarasempapel.com.br']
-    start_urls = ["https://linhares.camarasempapel.com.br/spl/consulta-producao.aspx?tipo=5003"]
+
+    def __init__(self, ano=None, tipo=None, max_pages=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.ano = ano
+        self.tipo = tipo
+        self.max_pages = int(max_pages) if max_pages is not None else None
+        base_url = "https://linhares.camarasempapel.com.br/spl/consulta-producao.aspx"
+        params = []
+        if self.tipo:
+            params.append(f"tipo={self.tipo}")
+        else:
+            params.append("tipo=1")
+        if self.ano:
+            params.append(f"ano_proposicao={self.ano}")
+        self.start_urls = [f"{base_url}?{'&'.join(params)}"]
     
     custom_settings = {
         'DOWNLOAD_DELAY': 2,
-        'CONCURRENT_REQUESTS_PER_DOMAIN': 4,
+        'CONCURRENT_REQUESTS_PER_DOMAIN': 1,
         'RETRY_TIMES': 3,
         'ROBOTSTXT_OBEY': False, # Adicionado para garantir o acesso
+        'USER_AGENT': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
     }
 
     def parse(self, response):
         """Processa a página de listagem e segue para a próxima."""
         proposicoes = response.css("div.kt-widget5__item")
-        
+
         # Usa a configuração CLOSESPIDER_ITEMCOUNT para limitar, se necessário
         for prop in proposicoes:
             item = self.extract_metadata_from_list(prop, response)
@@ -42,22 +57,23 @@ class EsLinharesSpider(scrapy.Spider):
         if next_page_button and next_page_button.attrib.get('href'):
             current_page_number = response.meta.get('page_number', 1)
             next_page_number = current_page_number + 1
-            self.logger.info(f"Navegando para a página {next_page_number}...")
+            if self.max_pages is None or next_page_number <= self.max_pages:
+                self.logger.info(f"Navegando para a página {next_page_number}...")
 
-            form_data = {
-                '__EVENTTARGET': 'ctl00$ContentPlaceHolder1$lbNext',
-                '__EVENTARGUMENT': '',
-                '__VIEWSTATE': response.css('input#__VIEWSTATE::attr(value)').get(),
-                '__VIEWSTATEGENERATOR': response.css('input#__VIEWSTATEGENERATOR::attr(value)').get(),
-                '__EVENTVALIDATION': response.css('input#__EVENTVALIDATION::attr(value)').get(),
-            }
+                form_data = {
+                    '__EVENTTARGET': 'ctl00$ContentPlaceHolder1$lbNext',
+                    '__EVENTARGUMENT': '',
+                    '__VIEWSTATE': response.css('input#__VIEWSTATE::attr(value)').get(),
+                    '__VIEWSTATEGENERATOR': response.css('input#__VIEWSTATEGENERATOR::attr(value)').get(),
+                    '__EVENTVALIDATION': response.css('input#__EVENTVALIDATION::attr(value)').get(),
+                }
 
-            yield scrapy.FormRequest(
-                url=response.url,
-                formdata=form_data,
-                callback=self.parse,
-                meta={'page_number': next_page_number}
-            )
+                yield scrapy.FormRequest(
+                    url=response.url,
+                    formdata=form_data,
+                    callback=self.parse,
+                    meta={'page_number': next_page_number}
+                )
 
     def parse_process_page(self, response):
         """Encontra o link do PDF na página do processo e configura para download via pipeline."""
@@ -142,7 +158,7 @@ class EsLinharesSpider(scrapy.Spider):
 
         # Gerar caminho para arquivo .md
         normalized_type = item['type'].lower().replace(' ', '-').replace('º', '') if item['type'] else 'unknown'
-        item['caminho_arquivo_texto'] = f"{self.uf}/{self.slug}/{normalized_type}-{item['number']}-{item['year']}.md"
+        item['md_files'] = f"{self.uf}/{self.slug}/md/{item['year']}/{normalized_type}-{item['number']}-{item['year']}.md"
 
         return item
 

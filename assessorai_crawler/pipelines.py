@@ -67,23 +67,21 @@ class ProposicaoFilesPipeline(FilesPipeline):
     
     def file_path(self, request, response=None, info=None, *, item=None):
         """Define o caminho onde o arquivo será salvo"""
-        # Criar estrutura de pastas: files/{spider_name}/{year}/{number}/
         spider_name = info.spider.name
         year = item.get('year', 'unknown')
         number = item.get('number', 'unknown')
+        type_ = item.get('type', 'unknown')
+        normalized_type = type_.lower().replace(' ', '-').replace('º', '') if type_ else 'unknown'
+        filename = f"{normalized_type}-{number}-{year}.pdf"
         
-        # Extrair nome do arquivo da URL
-        url_hash = hashlib.md5(request.url.encode()).hexdigest()
-        ext = os.path.splitext(request.url)[1] or '.pdf'
-        filename = f"{number}_{year}_{url_hash}{ext}"
-        
-        return f"{spider_name}/{year}/{filename}"
+        return f"{spider_name}/pdf/{year}/{filename}"
     
     def item_completed(self, results, item, info):
         """Adiciona informações dos arquivos baixados ao item"""
         file_paths = [x['path'] for ok, x in results if ok]
+        info.spider.logger.info(f"Files downloaded for {item.get('number')}: {file_paths}")
         if file_paths:
-            item['files'] = file_paths
+            item['pdf_files'] = file_paths
         return item
 
 
@@ -96,7 +94,8 @@ class GeminiPDFExtractionPipeline:
         if not api_key:
             raise ValueError("GEMINI_API_KEY não encontrada no arquivo .env")
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        self.files_dir = 'storage/downloads'  # Para acessar arquivos
         
         # Prompt para extração de texto legislativo
         self.extraction_prompt = """
@@ -113,10 +112,28 @@ Organize o texto de forma clara e estruturada.
     
     def process_item(self, item, spider):
         """Processa PDFs baixados e extrai texto usando Gemini"""
-        files = item.get('files', [])
-        
-        if not files:
-            spider.logger.warning(f"Item {item.get('title')} não possui arquivos para processar")
+        pdf_files = item.get('pdf_files', [])
+        spider.logger.info(f"Gemini processing item {item.get('number')}, pdf_files: {pdf_files}")
+
+        if not pdf_files:
+            item['full_text'] = "[FALHA] Nenhum arquivo PDF encontrado para extração."
+            return item
+
+        # Assume um arquivo PDF por item
+        pdf_path = pdf_files[0]
+        full_pdf_path = os.path.join(self.files_dir, pdf_path)
+        spider.logger.info(f"Processing PDF: {full_pdf_path}, exists: {os.path.exists(full_pdf_path)}")
+
+        # Upload do arquivo para Gemini
+        uploaded_file = genai.upload_file(full_pdf_path)
+
+        # Gera conteúdo com o prompt
+        response = self.model.generate_content([uploaded_file, self.extraction_prompt])
+
+        # Extrai o texto da resposta
+        item['full_text'] = response.text
+
+
         return item
 
 
@@ -124,12 +141,18 @@ class MarkdownWriterPipeline:
     """Pipeline que salva o texto extraído em arquivo .md"""
 
     def process_item(self, item, spider):
-        """Salva full_text em arquivo .md se caminho_arquivo_texto estiver definido"""
+        """Salva full_text em arquivo .md se md_files estiver definido"""
         full_text = item.get('full_text', '').strip()
-        caminho = item.get('caminho_arquivo_texto')
+        md_files = item.get('md_files')
 
-        if not full_text or not caminho:
-            spider.logger.debug(f"Pulando salvamento .md para item {item.get('title')} - texto ou caminho ausente")
+        if not full_text or not md_files:
+            return item
+
+        # Caminho completo: storage/downloads/{md_files}
+        full_path = os.path.join('storage', 'downloads', md_files)
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+        with open(full_path, 'w', encoding='utf-8') as f:
+            f.write(full_text)
         return item
 
 
@@ -146,8 +169,8 @@ class TestItemCollectorPipeline:
         self.items.append(dict(item))
         return item
 
-        # Caminho completo: storage/downloads/md/{caminho}
-        full_path = os.path.join('storage', 'downloads', 'md', caminho)
+        # Caminho completo: storage/downloads/{caminho}
+        full_path = os.path.join('storage', 'downloads', caminho)
         dir_path = os.path.dirname(full_path)
 
         try:

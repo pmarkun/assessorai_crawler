@@ -17,8 +17,8 @@ class ProposicaoItem(scrapy.Item):
     scraped_at = scrapy.Field()
     emenda = scrapy.Field()
     file_urls = scrapy.Field()  # URLs dos arquivos para download
-    files = scrapy.Field()  # Metadados dos arquivos baixados pelo FilesPipeline
-    caminho_arquivo_texto = scrapy.Field()  # Caminho para o arquivo .md com texto extraído
+    pdf_files = scrapy.Field()  # Metadados dos arquivos baixados pelo FilesPipeline
+    md_files = scrapy.Field()  # Caminho para o arquivo .md com texto extraído
 
     def missing_fields(self):
         """Retorna lista de campos obrigatórios que estão vazios ou None"""
