@@ -9,8 +9,6 @@ class ProposicaoItem(scrapy.Item):
     year = scrapy.Field()
     author = scrapy.Field()
     subject = scrapy.Field()
-    full_text = scrapy.Field()
-    length = scrapy.Field()
     meta = scrapy.Field()
     url = scrapy.Field()
     uuid = scrapy.Field()
@@ -24,7 +22,7 @@ class ProposicaoItem(scrapy.Item):
     def missing_fields(self):
         """Retorna lista de campos obrigatórios que estão vazios ou None"""
         required = [
-            'title', 'house', 'subject', 'full_text', 'url'
+            'title', 'house', 'subject', 'url'
         ]
         return [f for f in required if not self.get(f)]
 

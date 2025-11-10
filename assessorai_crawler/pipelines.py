@@ -129,15 +129,12 @@ Organize o texto de forma clara e estruturada.
         if md_files:
             full_md_path = os.path.join('storage', 'output', md_files)
             if os.path.exists(full_md_path):
-                spider.logger.info(f"Arquivo MD já existe, carregando conteúdo: {full_md_path}")
-                with open(full_md_path, 'r', encoding='utf-8') as f:
-                    item['full_text'] = f.read().strip()
+                spider.logger.info(f"Arquivo MD já existe, pulando extração: {full_md_path}")
                 return item
 
         # Verifica se API key está disponível
         if not self.api_key:
             spider.logger.info(f"Gemini API key não disponível, pulando extração para item {item.get('number')}")
-            item['full_text'] = "[PULADO] API key do Gemini não disponível."
             item['md_files'] = None  # Deixa o campo vazio
             return item
 
@@ -145,7 +142,7 @@ Organize o texto de forma clara e estruturada.
         spider.logger.info(f"Gemini processing item {item.get('number')}, pdf_files: {pdf_files}")
 
         if not pdf_files:
-            item['full_text'] = "[FALHA] Nenhum arquivo PDF encontrado para extração."
+            spider.logger.warning(f"Nenhum arquivo PDF encontrado para extração do item {item.get('number')}")
             return item
 
         # Assume um arquivo PDF por item
@@ -153,15 +150,33 @@ Organize o texto de forma clara e estruturada.
         full_pdf_path = os.path.join(self.files_dir, pdf_path)
         spider.logger.info(f"Processing PDF: {full_pdf_path}, exists: {os.path.exists(full_pdf_path)}")
 
-        # Upload do arquivo para Gemini
-        uploaded_file = genai.upload_file(full_pdf_path)
+        if not os.path.exists(full_pdf_path):
+            spider.logger.warning(f"Arquivo PDF não encontrado: {full_pdf_path}")
+            return item
 
-        # Gera conteúdo com o prompt
-        response = self.model.generate_content([uploaded_file, self.extraction_prompt])
+        try:
+            # Upload do arquivo para Gemini
+            uploaded_file = genai.upload_file(full_pdf_path)
 
-        # Extrai o texto da resposta
-        item['full_text'] = response.text
+            # Gera conteúdo com o prompt
+            response = self.model.generate_content([uploaded_file, self.extraction_prompt])
 
+            # Extrai o texto da resposta
+            extracted_text = response.text
+
+            # Escreve diretamente no arquivo MD
+            if md_files:
+                full_md_path = os.path.join('storage', 'output', md_files)
+                os.makedirs(os.path.dirname(full_md_path), exist_ok=True)
+                with open(full_md_path, 'w', encoding='utf-8') as f:
+                    f.write(extracted_text)
+                spider.logger.info(f"Texto extraído e salvo em MD: {full_md_path} ({len(extracted_text)} caracteres)")
+
+            # Limpar arquivo do Gemini
+            genai.delete_file(uploaded_file.name)
+
+        except Exception as e:
+            spider.logger.error(f"Erro ao processar PDF {full_pdf_path}: {str(e)}")
 
         return item
 
