@@ -128,8 +128,9 @@ Organize o texto de forma clara e estruturada.
         if md_files:
             full_md_path = os.path.join('storage', 'output', md_files)
             if os.path.exists(full_md_path):
-                spider.logger.info(f"Arquivo MD já existe, pulando extração Gemini: {full_md_path}")
-                item['full_text'] = "[PULADO] MD já existe"
+                spider.logger.info(f"Arquivo MD já existe, carregando conteúdo: {full_md_path}")
+                with open(full_md_path, 'r', encoding='utf-8') as f:
+                    item['full_text'] = f.read().strip()
                 return item
 
         pdf_files = item.get('pdf_files', [])
