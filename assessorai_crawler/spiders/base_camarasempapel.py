@@ -20,10 +20,9 @@ class BaseCamarasempapelSpider(scrapy.Spider):
 
     # Configurações padrão, podem ser sobrescritas
     custom_settings = {
-        'DOWNLOAD_DELAY': 2,
-        'CONCURRENT_REQUESTS_PER_DOMAIN': 1,
-        'RETRY_TIMES': 3,
         'ROBOTSTXT_OBEY': False,
+        'USER_AGENT': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'CONCURRENT_REQUESTS': 1,
     }
 
     def __init__(self, ano=None, tipo=None, max_pages=None, *args, **kwargs):
