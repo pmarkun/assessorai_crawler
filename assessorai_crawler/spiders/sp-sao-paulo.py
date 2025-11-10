@@ -24,7 +24,7 @@ class SpSaoPauloSpider(scrapy.Spider):
         """
         Permite limitar a coleta via linha de comando: -a limit=100
         """
-        super(ProposicoescidspSpider, self).__init__(*args, **kwargs)
+        super(SpSaoPauloSpider, self).__init__(*args, **kwargs)
         self.total_items_limit = int(limit) if limit else None
         self.items_processed_count = 0
         
