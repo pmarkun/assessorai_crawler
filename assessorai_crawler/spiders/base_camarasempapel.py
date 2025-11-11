@@ -114,9 +114,25 @@ class BaseCamarasempapelSpider(scrapy.Spider):
                 if 'arquivo' in query_params_link and query_params_link['arquivo'][0]:
                     caminho_pdf = query_params_link['arquivo'][0]
 
+        # Estratégia C: XPath fallback for direct PDF links
+        if not caminho_pdf:
+            pdf_hrefs = response.xpath("//a[contains(@href, '.pdf')]/@href").getall()
+            if pdf_hrefs:
+                # Prefer the one containing 'PL' or 'proposicao'
+                for href in pdf_hrefs:
+                    if 'PL' in href.upper() or 'proposicao' in href.lower():
+                        caminho_pdf = href
+                        break
+                if not caminho_pdf:
+                    caminho_pdf = pdf_hrefs[0]  # Take the first if no match
+
         if caminho_pdf:
-            base_pdf_url = f"https://{self.domain}/"
-            url_direta_pdf = urljoin(base_pdf_url, caminho_pdf)
+            # If it's already a full URL, use it directly
+            if caminho_pdf.startswith('http'):
+                url_direta_pdf = caminho_pdf
+            else:
+                base_pdf_url = f"https://{self.domain}/"
+                url_direta_pdf = urljoin(base_pdf_url, caminho_pdf)
             item['file_urls'] = [url_direta_pdf]
 
             # Set expected PDF path for extraction even if download is skipped
