@@ -9,6 +9,10 @@
 
 BOT_NAME = "assessorai_crawler"
 
+# Output directories
+OUTPUT_DIR = 'storage/output'
+TEST_OUTPUT_DIR = 'storage/test_output'
+
 SPIDER_MODULES = ["assessorai_crawler.spiders"]
 NEWSPIDER_MODULE = "assessorai_crawler.spiders"
 
