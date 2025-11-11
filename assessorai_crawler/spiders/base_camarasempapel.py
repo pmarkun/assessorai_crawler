@@ -25,12 +25,18 @@ class BaseCamarasempapelSpider(scrapy.Spider):
         'CONCURRENT_REQUESTS': 1,
     }
 
-    def __init__(self, ano=None, tipo=None, max_pages=None, reset=None, *args, **kwargs):
+    def __init__(self, ano=None, tipo=None, max_pages=None, reset=None, test_mode=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ano = ano
         self.tipo = tipo or self.default_tipo
         self.max_pages = int(max_pages) if max_pages is not None else None
         self.reset = reset
+        self.test_mode = test_mode
+        if self.test_mode:
+            self.custom_settings.update({
+                'CLOSESPIDER_ITEMCOUNT': 5,
+                'LOG_LEVEL': 'DEBUG',
+            })
 
         if not self.domain:
             raise ValueError("Subclass must define 'domain'")
@@ -112,6 +118,10 @@ class BaseCamarasempapelSpider(scrapy.Spider):
             base_pdf_url = f"https://{self.domain}/"
             url_direta_pdf = urljoin(base_pdf_url, caminho_pdf)
             item['file_urls'] = [url_direta_pdf]
+
+            # Set expected PDF path for extraction even if download is skipped
+            normalized_type = item['type'].lower().replace(' ', '-').replace('º', '') if item['type'] else 'unknown'
+            item['pdf_files'] = [f"{self.slug}/pdf/{item['year']}/{normalized_type}-{item['number']}-{item['year']}.pdf"]
         else:
             self.logger.warning(f"PDF não encontrado para '{item['title']}'")
             item['full_text'] = "[FALHA] PDF não encontrado na página de documentos."

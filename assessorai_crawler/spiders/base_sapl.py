@@ -30,12 +30,18 @@ class BaseSaplSpider(scrapy.Spider):
         'DOWNLOAD_DELAY': 1,
     }
 
-    def __init__(self, ano=None, tipo=None, max_pages=None, reset=None, *args, **kwargs):
+    def __init__(self, ano=None, tipo=None, max_pages=None, reset=None, test_mode=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.ano = ano
         self.tipo = tipo or self.default_tipo
         self.max_pages = int(max_pages) if max_pages is not None else None
         self.reset = reset
+        self.test_mode = test_mode
+        if self.test_mode:
+            self.custom_settings.update({
+                'CLOSESPIDER_ITEMCOUNT': 5,
+                'LOG_LEVEL': 'DEBUG',
+            })
 
         if not self.domain or not self.base_url:
             raise ValueError("Subclass must define 'domain' and 'base_url'")
