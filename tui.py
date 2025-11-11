@@ -18,6 +18,8 @@ from textual.widget import Widget
 from textual import events
 from textual.binding import Binding
 
+from assessorai_crawler.settings import OUTPUT_DIR, TEST_OUTPUT_DIR
+
 
 class SpiderSelector(Widget):
     """Widget for selecting a spider from the list."""
@@ -67,15 +69,15 @@ class SpiderSelector(Widget):
 
             # Check base class
             if "BaseCamarasempapelSpider" in content:
-                return ["ano", "max_pages"]
+                return ["ano"]
             elif "BaseSaplSpider" in content:
-                return ["ano", "max_pages"]
+                return ["ano"]
             elif "BaseSiscamSpider" in content:
-                return ["ano", "max_pages"]
+                return ["ano"]
             else:
-                return ["ano", "max_pages"]  # fallback
+                return ["ano"]  # fallback
         except:
-            return ["ano", "max_pages"]
+            return ["ano"]
 
     def compose(self) -> ComposeResult:
         with Vertical():
@@ -123,7 +125,7 @@ class AssessorAICrawlerTUI(App):
 
     #top_half {
         height: 20%;
-        padding: 1;
+        padding: 0 1;
         border-bottom: solid $primary;
     }
 
@@ -163,7 +165,8 @@ class AssessorAICrawlerTUI(App):
     }
 
     Button {
-        margin: 1;
+        margin: 0 1 0 0;
+        height: 3;
     }
 
     #back_button {
@@ -172,12 +175,23 @@ class AssessorAICrawlerTUI(App):
         color: $primary;
         padding: 0 1;
         margin: 0 0 1 0;
-        height: 1;
+        height: 3;
         text-style: bold;
     }
 
     Input {
-        margin: 1;
+        margin: 0 1 0 0;
+        width: 15;
+        height: 3;
+    }
+
+    #config_row {
+        align-vertical: middle;
+    }
+
+    Checkbox {
+        margin: 0 1 0 0;
+        height: 3;
     }
 
     #content_scroll {
@@ -221,10 +235,8 @@ class AssessorAICrawlerTUI(App):
             # Top half: Config and Run
             with Vertical(id="top_half"):
                 yield Static("", id="scraper_name")
-                with Horizontal():
-                    with Vertical(id="args_section"):
-                        yield Static("Args:", classes="section-title")
-                        # Args inputs will be added dynamically
+                with Horizontal(id="config_row"):
+                    # Args inputs will be added dynamically here
                     yield Button("Run Scrape", id="run_button", disabled=True)
 
             # Bottom half: Logs left, Results right
@@ -351,6 +363,7 @@ class AssessorAICrawlerTUI(App):
         test_mode = self.query_one("#test_mode", Checkbox).value
         if test_mode:
             self.current_args["max_pages"] = "1"
+            self.current_args["test_mode"] = "True"
 
         # Check reset mode
         reset_mode = self.query_one("#reset_mode", Checkbox).value
@@ -466,7 +479,9 @@ class AssessorAICrawlerTUI(App):
         else:
             md_files = item.get('md_files')
             if md_files:
-                md_path = Path.cwd() / "storage" / "output" / md_files
+                test_mode = self.query_one("#test_mode", Checkbox).value
+                output_dir = TEST_OUTPUT_DIR if test_mode else OUTPUT_DIR
+                md_path = Path.cwd() / output_dir / md_files
                 if md_path.exists():
                     try:
                         with open(md_path, 'r', encoding='utf-8') as f:
@@ -534,14 +549,17 @@ class AssessorAICrawlerTUI(App):
         scraper_name.update(f"Scraper: {self.current_spider['house']} ({self.current_spider['name']})")
 
         # Add args inputs
-        args_section = self.query_one("#args_section")
-        args_section.remove_children()
+        config_row = self.query_one("#config_row")
+        # Remove existing inputs/checkboxes, keep only button
+        for child in list(config_row.children):
+            if child.id != "run_button":
+                child.remove()
         for arg in self.current_spider.get("args", []):
-            args_section.mount(Static(f"{arg.upper()}:"))
-            args_section.mount(Input(placeholder=f"Enter {arg}", id=f"input_{arg}"))
+            if arg != "max_pages":  # Skip max_pages input
+                config_row.mount(Input(placeholder=arg.upper(), id=f"input_{arg}"))
 
-        args_section.mount(Checkbox("Test Mode (limit to 1 page)", id="test_mode"))
-        args_section.mount(Checkbox("Reset Data (overwrite existing)", id="reset_mode"))
+        config_row.mount(Checkbox("Test", id="test_mode"))
+        config_row.mount(Checkbox("Reset", id="reset_mode"))
 
         # Enable run button
         run_button = self.query_one("#run_button", Button)
@@ -566,10 +584,11 @@ class AssessorAICrawlerTUI(App):
         if self.scraping_running:
             self.cancel_execution()
 
-        # Clear args_section to prevent duplicate IDs
-        args_section = self.query_one("#args_section")
-        for child in list(args_section.children):
-            child.remove()
+        # Clear config_row to prevent duplicate IDs
+        config_row = self.query_one("#config_row")
+        for child in list(config_row.children):
+            if child.id != "run_button":
+                child.remove()
 
         # Hide main layout
         main_layout = self.query_one("#main_layout")
