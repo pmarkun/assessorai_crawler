@@ -42,9 +42,7 @@ class BaseSiscamSpider(scrapy.Spider):
         self.logger.info(f"Iniciando coleta para os tipos: {list(self.tipos_documento.values())}")
 
         for codigo_tipo in self.tipos_documento.keys():
-            url = f"{base_url}?id=80&pagina=1&Modulo=8&Documento={codigo_tipo}"
-            if self.ano:
-                url += f"&Ano={self.ano}"
+            url = f"{base_url}?Pesquisa=Avancada&id=80&pagina=1&Modulo=8&Documento={codigo_tipo}&Numeracao=Documento&NumeroInicial=&AnoInicial={self.ano or ''}&DataInicial=&NumeroFinal=&AnoFinal=&DataFinal=&SubTipoId=0&Situacao=0&TipoAutor=Todos&AutoriaId=0&Iniciativa=Nenhum&NoTexto=false&Assunto=&Observacoes="
             yield scrapy.Request(
                 url,
                 callback=self.parse,
@@ -79,9 +77,7 @@ class BaseSiscamSpider(scrapy.Spider):
             return
 
         next_page = page_number + 1
-        next_page_url = response.urljoin(f"?id=80&pagina={next_page}&Modulo=8&Documento={codigo_tipo}")
-        if self.ano:
-            next_page_url += f"&Ano={self.ano}"
+        next_page_url = response.urljoin(f"?Pesquisa=Avancada&id=80&pagina={next_page}&Modulo=8&Documento={codigo_tipo}&Numeracao=Documento&NumeroInicial=&AnoInicial={self.ano or ''}&DataInicial=&NumeroFinal=&AnoFinal=&DataFinal=&SubTipoId=0&Situacao=0&TipoAutor=Todos&AutoriaId=0&Iniciativa=Nenhum&NoTexto=false&Assunto=&Observacoes=")
 
         self.logger.info(f"Agendando próxima página: {next_page_url}")
         yield scrapy.Request(
