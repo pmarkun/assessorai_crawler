@@ -28,7 +28,7 @@ class JsonWriterSinglePipeline:
         self.items = []
         self.existing_uuids = set()
         # Garante pasta de saída
-        output_dir = os.path.join('storage', 'output')
+        output_dir = spider.settings.get('TEST_OUTPUT_DIR' if getattr(spider, 'test_mode', False) else 'OUTPUT_DIR', 'storage/output')
         os.makedirs(output_dir, exist_ok=True)
         self.file_path = os.path.join(output_dir, f'{spider.slug}_proposicoes.json')
         self.batch_size = spider.settings.get('JSON_BATCH_SIZE', 10)
