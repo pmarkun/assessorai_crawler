@@ -114,3 +114,6 @@ DOWNLOAD_TIMEOUT = 30
 
 # Batch size for incremental JSON saving
 JSON_BATCH_SIZE = 10
+
+# Enable Gemini PDF extraction pipeline
+GEMINI_ENABLED = False
