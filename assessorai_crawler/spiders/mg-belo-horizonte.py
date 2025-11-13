@@ -39,7 +39,7 @@ class MgBeloHorizonteSpider(scrapy.Spider):
                 'LOG_LEVEL': 'DEBUG',
             })
 
-        self.allowed_domains = [self.domain]
+        self.allowed_domains = [self.domain, 'cmbhsilint.cmbh.mg.gov.br']
 
     def start_requests(self):
         """Inicia com POST para a primeira página."""
@@ -91,9 +91,6 @@ class MgBeloHorizonteSpider(scrapy.Spider):
     def parse(self, response):
         """Processa a página de resultados."""
         self.logger.info(f"Processando página: {response.url}")
-
-        # Garantir encoding UTF-8
-        response.encoding = 'utf-8'
 
         # Extrair itens da lista
         linhas = response.css('ul.lista-pesquisas li')
@@ -169,11 +166,13 @@ class MgBeloHorizonteSpider(scrapy.Spider):
         # Extrair de <p>
         ps = li.css('p')
         for p in ps:
-            text = p.css('::text').get('').strip()
+            text = p.xpath('string(.)').get().strip()
             if 'Autoria:' in text:
-                item['author'] = [text.replace('Autoria:', '').strip()]
+                item['author'] = [a.strip() for a in text.replace('Autoria:', '').strip().split(';') if a.strip()]
+            elif 'Ementa:' in text:
+                item['emenda'] = text.replace('Ementa:', '').strip()
             elif 'Assunto:' in text:
-                item['subject'] = text.replace('Assunto:', '').strip()
+                item['subject'] = [s.strip() for s in text.replace('Assunto:', '').strip().split(',') if s.strip()]
             elif 'Data de apresentação:' in text:
                 item['presentation_date'] = text.replace('Data de apresentação:', '').strip()
 
