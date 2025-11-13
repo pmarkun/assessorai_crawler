@@ -147,6 +147,10 @@ Organize o texto de forma clara e estruturada.
     
     def process_item(self, item, spider):
         """Processa PDFs baixados e extrai texto usando Gemini"""
+        # Verifica se o pipeline está habilitado
+        if not spider.settings.get('GEMINI_ENABLED', False):
+            return item
+
         # Verifica se o arquivo MD já existe
         md_files = item.get('md_files')
         if md_files:
